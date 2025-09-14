@@ -63,10 +63,15 @@
     </article>
 
     <article>
-      <h1>Chart</h1>
+      <h1>Chart (Chart.js)</h1>
       <p>
         <canvas id="myChart" width="400" height="400"></canvas>
       </p>
+    </article>
+
+    <article>
+      <h1>Spending (D3.js)</h1>
+      <div id="d3chart"></div>
     </article>
 
   </div>
@@ -78,6 +83,7 @@
   </div>
 </footer>
 
+<!-- Axios + Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.20.0/axios.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js" crossorigin="anonymous"></script>
 
@@ -121,6 +127,52 @@
   }
 
   getBudget();
+</script>
+
+<!-- D3.js -->
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script>
+(async function () {
+  const res = await axios.get('/budget');
+  const items = res.data.myBudget;
+
+  const width = 480, height = 280;
+  const margin = { top: 20, right: 20, bottom: 60, left: 60 };
+
+  const x = d3.scaleBand()
+    .domain(items.map(d => d.title))
+    .range([margin.left, width - margin.right])
+    .padding(0.2);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(items, d => d.budget)]).nice()
+    .range([height - margin.bottom, margin.top]);
+
+  const svg = d3.select('#d3chart')
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  svg.selectAll('rect')
+    .data(items)
+    .enter()
+    .append('rect')
+    .attr('x', d => x(d.title))
+    .attr('y', d => y(d.budget))
+    .attr('width', x.bandwidth())
+    .attr('height', d => y(0) - y(d.budget));
+
+  svg.append('g')
+    .attr('transform', `translate(0,${height - margin.bottom})`)
+    .call(d3.axisBottom(x))
+    .selectAll('text')
+    .attr('transform', 'rotate(-30)')
+    .style('text-anchor', 'end');
+
+  svg.append('g')
+    .attr('transform', `translate(${margin.left},0)`)
+    .call(d3.axisLeft(y));
+})();
 </script>
 
 </body>
